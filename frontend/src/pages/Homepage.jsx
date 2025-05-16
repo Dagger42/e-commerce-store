@@ -1,4 +1,5 @@
-import { Container, VStack, HStack, Text, Box, Image, Button, Link, SimpleGrid,
+import {
+  Container, VStack, HStack, Text, Box, Image, Button, Link, SimpleGrid,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -8,15 +9,20 @@ import { Container, VStack, HStack, Text, Box, Image, Button, Link, SimpleGrid,
   ModalCloseButton,
   useDisclosure,
   Input
- } from '@chakra-ui/react'
+} from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 import { useProductStore } from '../store/product.js'
+import { set } from 'mongoose';
 
 const Homepage = () => {
 
-  const { fetchProducts, deleteProduct, products } = useProductStore();
+  const { fetchProducts, updateProduct, deleteProduct, products } = useProductStore();
+
   const { isOpen, onOpen, onClose } = useDisclosure();
-  
+
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [editedProduct, setEditedProduct] = useState({ name: "", price: "", image: "" });
+
   async function isImageValid(url) {
     const res = await fetch("/api/images/validate", {
       method: "POST",
@@ -78,18 +84,22 @@ const Homepage = () => {
               h="100%">
               <VStack spacing={4} p={4} align={'center'} h='100%' justify={'space-between'}>
                 <Image src={validImages[product._id] === false ? "/no-image-14596.png" : product.image}
-                  w = "100%"
-                  maxH = "160px"
-                  objectFit="contain"         
-                  borderRadius="md"                  
+                  w="100%"
+                  maxH="160px"
+                  objectFit="contain"
+                  borderRadius="md"
                   mx="auto">
                 </Image>
                 <Text fontWeight={'bold'}> {product.name} </Text>
                 <Text> {"$" + product.price}</Text>
                 <HStack spacing={2}>
-                  <Button> Edit </Button>
-                  <Button onClick = {() => {
-                    deleteProduct(product._id)
+                  <Button onClick={() => {
+                    setSelectedProduct(product);
+                    setEditedProduct(product);
+                    onOpen();
+                  }}> Edit </Button>
+                  <Button onClick={() => {
+                    deleteProduct(product._id);
                   }}> Delete </Button>
                 </HStack>
               </VStack>
@@ -97,6 +107,44 @@ const Homepage = () => {
 
           ))}
         </SimpleGrid>
+
+        <Modal isOpen={isOpen} onClose={onClose} isCentered={true}>
+          <ModalOverlay bg={"blackAlpha.800"} />
+          <ModalContent bg="purple.700">
+            <ModalHeader>Edit product {selectedProduct?.name}</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <VStack spacing={4}>
+                <Input
+                  placeholder='Product Name'
+                  value={editedProduct.name}
+                  onChange={(e) => setEditedProduct({ ...editedProduct, name: e.target.value })}
+                />
+                <Input
+                  placeholder='Product Price'
+                  value={editedProduct.price}
+                  onChange={(e) => setEditedProduct({ ...editedProduct, price: e.target.value })}
+                />
+                <Input
+                  placeholder='Image URL'
+                  value={editedProduct.image}
+                  onChange={(e) => setEditedProduct({ ...editedProduct, image: e.target.value })}
+                />
+              </VStack>
+            </ModalBody>
+
+            <ModalFooter justifyContent="center">
+              <Button colorScheme='blue' mr={3} onClick={onClose}>
+                Close
+              </Button>
+              <Button variant='ghost' onClick={() => {
+                updateProduct(selectedProduct._id, editedProduct);
+                onClose();
+              }
+              }>Confirm</Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
 
         {products.length === 0 && (
           <HStack spacing={3} justify="center">

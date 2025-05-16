@@ -44,6 +44,15 @@ export const useProductStore = create((set) => ({
         return {success: true, message: "Product deleted successfully"};
     },
     updateProduct : async (id, updatedProduct) => {
-        
+        const res = await fetch(`/api/products/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updatedProduct),
+        });
+        const data = await res.json();
+        set((state) => ({products: state.products.map((product) => product._id !== id ? product : data.data)}));
+        return {success: true, message: "Product updated successfully"};
     }
 }));
